@@ -58,27 +58,16 @@ GROUP BY 1;
 ### 2. Find the Most Common Rating for Movies and TV Shows
 
 ```sql
-WITH RatingCounts AS (
-    SELECT 
-        type,
-        rating,
-        COUNT(*) AS rating_count
-    FROM netflix
-    GROUP BY type, rating
-),
-RankedRatings AS (
-    SELECT 
-        type,
-        rating,
-        rating_count,
-        RANK() OVER (PARTITION BY type ORDER BY rating_count DESC) AS rank
-    FROM RatingCounts
-)
-SELECT 
-    type,
-    rating AS most_frequent_rating
-FROM RankedRatings
-WHERE rank = 1;
+SELECT type , rating
+FROM
+(SELECT type , 
+rating ,
+COUNT(*),
+RANK() OVER(PARTITION BY type ORDER BY COUNT(*) DESC) AS ranking
+FROM netflix
+GROUP BY 1,2
+) AS t1
+WHERE ranking = 1;
 ```
 
 **Objective:** Identify the most frequently occurring rating for each type of content.
@@ -96,17 +85,11 @@ WHERE release_year = 2020;
 ### 4. Find the Top 5 Countries with the Most Content on Netflix
 
 ```sql
-SELECT * 
-FROM
-(
-    SELECT 
-        UNNEST(STRING_TO_ARRAY(country, ',')) AS country,
-        COUNT(*) AS total_content
-    FROM netflix
-    GROUP BY 1
-) AS t1
-WHERE country IS NOT NULL
-ORDER BY total_content DESC
+SELECT 
+ UNNEST(STRING_TO_ARRAY(country, ',')) AS new_country, 
+ COUNT(*)  FROM netflix
+GROUP BY 1 
+ORDER BY 2 DESC
 LIMIT 5;
 ```
 
@@ -119,7 +102,7 @@ SELECT
     *
 FROM netflix
 WHERE type = 'Movie'
-ORDER BY SPLIT_PART(duration, ' ', 1)::INT DESC;
+ORDER BY SPLIT_PART(duration, ' ', 1)::NUMERIC DESC;
 ```
 
 **Objective:** Find the movie with the longest duration.
